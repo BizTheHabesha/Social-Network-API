@@ -12,7 +12,7 @@ const userSchema = new Schema({
 		unique: true,
 		required: "Email is required",
 		match: [
-			/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-]+)(\.[a-zA-Z]{2,5}){1,2}$/,
+			/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-]+)(\.[a-zA-Z]{2,5}){1,2}$/, // eslint-disable-line
 			"Please enter a valid email address",
 		],
 	},
