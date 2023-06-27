@@ -9,13 +9,6 @@ connection.on("error", (err) => {
 	clog.error(err.message);
 });
 
-// const seedDB = async () => {
-// 	await mongoose.connect("mongodb://localhost:27017/");
-// 	User.deleteMany({});
-// 	Thought.deleteMany({});
-// 	User.create;
-// };
-
 connection.once("open", async () => {
 	const clog = new Clog("/utils/seeds", true);
 	clog.success("connection open");
