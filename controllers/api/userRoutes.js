@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { User } = require("../../models/user");
+const { User } = require("../../models/");
 const { ClogHttp } = require("../../utils/clog");
 const router = require("express").Router();
 
