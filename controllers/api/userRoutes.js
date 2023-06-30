@@ -229,7 +229,10 @@ router.delete("/:id", async (req, res) => {
 });
 
 router.post("/:userId/friends/:friendId", async (req, res) => {
-	const clog = new ClogHttp("POST /:userId/friends/:friendId", true);
+	const clog = new ClogHttp(
+		"POST /api/users/:userId/friends/:friendId",
+		true
+	);
 	try {
 		const userId = req.params["userId"];
 		const friendId = req.params["friendId"];
@@ -277,6 +280,85 @@ router.post("/:userId/friends/:friendId", async (req, res) => {
 			return;
 		}
 		findUserRes.friends.push(friendId);
+		const saveRes = await findUserRes.save();
+		if (!saveRes) {
+			clog.error("Update failed");
+			clog.httpStatus(
+				503,
+				"Mongoose is unavailable or otherwise cannot update documents"
+			);
+			res.status(503).json({
+				message:
+					"Mongoose is unavailable or otherwise cannot update documents",
+			});
+			return;
+		}
+		clog.httpStatus(202);
+		res.status(202).json({ friends: findUserRes.friends });
+	} catch (err) {
+		clog.error(err.stack);
+		clog.httpStatus(500, err.message);
+		if (!res.headersSent) {
+			res.sendStatus(500);
+		} else {
+			clog.httpStatus(0, "Headers were already sent.");
+		}
+	}
+});
+
+router.delete("/:userId/friends/:friendId", async (req, res) => {
+	const clog = new ClogHttp(
+		"DELETE /api/users/:userId/friends/:friendId",
+		true
+	);
+	try {
+		const userId = req.params["userId"];
+		const friendId = req.params["friendId"];
+		if (!isValidObjectId(userId)) {
+			clog.httpStatus(406, `userId '${userId}' is not a valid id`);
+			res.status(406).json({
+				message: `userId '${userId}' is not a valid id`,
+			});
+			return;
+		}
+		if (!isValidObjectId(friendId)) {
+			clog.httpStatus(406, `friendId '${friendId}' is not a valid id`);
+			res.status(406).json({
+				message: `friendId '${friendId}' is not a valid id`,
+			});
+			return;
+		}
+		const findUserRes = await User.findById(userId);
+		if (!findUserRes) {
+			clog.httpStatus(
+				404,
+				`userId '${userId}' does not exist or could otherwise not be found!`
+			);
+			res.status(404).json({
+				message: `userId '${userId}' does not exist or could otherwise not be found!`,
+			});
+			return;
+		}
+		const findFriendRes = await User.findById(friendId);
+		if (!findFriendRes) {
+			clog.httpStatus(
+				404,
+				`friendId '${friendId}' does not exist or could otherwise not be found!`
+			);
+			res.status(404).json({
+				message: `friendId '${friendId}' does not exist or could otherwise not be found!`,
+			});
+			return;
+		}
+		const friendIndex = findUserRes.friends.indexOf(friendId);
+		if (friendIndex < 0) {
+			clog.httpStatus(400, `friendId '${friendId}' is not a friend`);
+			res.status(400).json({
+				message: `friendId '${friendId}' is not a friend`,
+			});
+			return;
+		}
+		findUserRes.friends.splice(friendIndex, 1);
 		const saveRes = await findUserRes.save();
 		if (!saveRes) {
 			clog.error("Update failed");
