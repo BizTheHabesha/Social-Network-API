@@ -17,7 +17,11 @@ router.get("/", async (req, res) => {
 	} catch (err) {
 		clog.error(err.stack);
 		clog.httpStatus(500, err.message);
-		res.sendStatus(500);
+		if (!res.headersSent) {
+			res.sendStatus(500);
+		} else {
+			clog.httpStatus(0, "Headers were already sent.");
+		}
 	}
 });
 
@@ -34,13 +38,18 @@ router.get("/:id", async (req, res) => {
 		if (!findRes) {
 			clog.httpStatus(404);
 			res.sendStatus(404);
+			return;
 		}
 		clog.httpStatus(200);
 		res.status(200).json(findRes);
 	} catch (err) {
 		clog.error(err.stack);
 		clog.httpStatus(500, err.message);
-		res.sendStatus(500);
+		if (!res.headersSent) {
+			res.sendStatus(500);
+		} else {
+			clog.httpStatus(0, "Headers were already sent.");
+		}
 	}
 });
 
@@ -108,7 +117,11 @@ router.post("/", async (req, res) => {
 	} catch (err) {
 		clog.error(err.stack);
 		clog.httpStatus(500, err.message);
-		res.sendStatus(500);
+		if (!res.headersSent) {
+			res.sendStatus(500);
+		} else {
+			clog.httpStatus(0, "Headers were already sent.");
+		}
 	}
 });
 
@@ -148,6 +161,48 @@ router.put("/:id", async (req, res) => {
 		clog.error(err.stack);
 		clog.httpStatus(500, err.message);
 		res.sendStatus(500);
+	}
+});
+
+router.delete("/:id", async (req, res) => {
+	const clog = new ClogHttp("DELETE /api/thoughts/:id", true);
+	try {
+		const _id = req.params["id"];
+		if (!isValidObjectId(_id)) {
+			clog.httpStatus(406, `${_id} is not a valid id`);
+			res.status(406).json({ message: `${_id} is not a valid id` });
+			return;
+		}
+		const findThoughtRes = await Thought.findById(_id);
+		if (!findThoughtRes) {
+			clog.httpStatus(
+				404,
+				`'${_id}' does not exist or could otherwise not be found`
+			);
+			res.status(404).json({
+				message: `'${_id}' does not exist or could otherwise not be found`,
+			});
+			return;
+		}
+		const deleteRes = await Thought.deleteOne({ _id });
+		if (!deleteRes.acknowledged) {
+			clog.httpStatus(9503, "Mongoose is unavailable?");
+			res.status(503).json({
+				message:
+					"Mongoose is unavailable or could not otherwise not complete the request",
+			});
+			return;
+		}
+		clog.httpStatus(200);
+		res.status(200).json(findThoughtRes);
+	} catch (err) {
+		clog.error(err.stack);
+		clog.httpStatus(500, err.message);
+		if (!res.headersSent) {
+			res.sendStatus(500);
+		} else {
+			clog.httpStatus(0, "Headers were already sent.");
+		}
 	}
 });
 
