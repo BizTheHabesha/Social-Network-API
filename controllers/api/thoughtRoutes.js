@@ -206,4 +206,48 @@ router.delete("/:id", async (req, res) => {
 	}
 });
 
+router.post("/:id/reactions", async (req, res) => {
+	const clog = new ClogHttp("POST /api/thoughts/:id/reactions", true);
+	try {
+		const { id: _id } = req.params;
+		const { reactionBody, username } = req.body;
+		if (!isValidObjectId(_id)) {
+			clog.httpStatus(406, `${_id} is not a valid id`);
+			res.status(406).json({ message: `${_id} is not a valid id` });
+			return;
+		}
+		if (!reactionBody || !username) {
+			clog.httpStatus(
+				406,
+				"Expected reactionBody and username in request"
+			);
+			res.status(406).json({
+				message: "Expected reactionBody and username in request",
+			});
+			return;
+		}
+		const findRes = await Thought.findById(_id);
+		if (!findRes) {
+			clog.httpStatus(
+				404,
+				`Thought with ID '${_id}' does not exist or could otherwise not be found!`
+			);
+			res.status(404).json({
+				message: `Thought with ID '${_id}' does not exist or could otherwise not be found!`,
+			});
+			return;
+		}
+		clog.httpStatus(501);
+		res.sendStatus(501);
+	} catch (err) {
+		clog.error(err.stack);
+		clog.httpStatus(500, err.message);
+		if (!res.headersSent) {
+			res.sendStatus(500);
+		} else {
+			clog.httpStatus(0, "Headers were already sent.");
+		}
+	}
+});
+
 module.exports = router;
