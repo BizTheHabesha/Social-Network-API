@@ -93,7 +93,7 @@ router.post("/", async (req, res) => {
 		const saveRes = await findRes.save();
 		// check that the user was saved succesfully
 		if (!saveRes) {
-			clog.error("Creation failed");
+			clog.error("Update failed");
 			clog.httpStatus(
 				503,
 				"Mongoose is unavailable or otherwise cannot update documents"
@@ -103,7 +103,7 @@ router.post("/", async (req, res) => {
 					"Mongoose is unavailable or otherwise cannot update documents",
 			});
 		}
-
+		clog.httpStatus(201);
 		res.status(201).json(createRes);
 	} catch (err) {
 		clog.error(err.stack);
