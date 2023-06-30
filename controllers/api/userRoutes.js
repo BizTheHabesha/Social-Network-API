@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { User } = require("../../models/user");
+const { User } = require("../../models/");
 const { ClogHttp } = require("../../utils/clog");
 const router = require("express").Router();
 
@@ -114,6 +114,7 @@ router.put("/:id", async (req, res) => {
 	const clog = new ClogHttp("PUT /api/users/:id", true);
 	try {
 		const _id = req.params["id"];
+		const { username, email } = req.body;
 		if (!isValidObjectId(_id)) {
 			clog.httpStatus(406, `${_id} is not a valid id`);
 			res.status(406).json({ message: `${_id} is not a valid id` });
@@ -130,7 +131,6 @@ router.put("/:id", async (req, res) => {
 			});
 			return;
 		}
-		const { username, email } = req.body;
 		if (!username && !email) {
 			clog.httpStatus(406, "Expected username or email in request body");
 			res.status(406).json({
