@@ -34,9 +34,16 @@ connection.once("open", async () => {
 	clog.log("Inserting the following Thoughts");
 	clog.info(JSON.stringify(thoughtSeeds, null, "\t"));
 
-	await User.collection.insertMany(userSeeds);
 	await Thought.collection.insertMany(thoughtSeeds);
-
+	let modifiedUsers = [];
+	for (const user of userSeeds) {
+		const myThoughts = await Thought.find({ username: user.username });
+		let arr = [];
+		myThoughts.forEach((thought) => arr.push(thought._id));
+		user.thoughts = arr;
+		modifiedUsers.push(user);
+	}
+	await User.collection.insertMany(modifiedUsers);
 	clog.success("connection closed");
 	process.exit(0);
 	clog.critical("connection couldn't be closed");
