@@ -153,7 +153,7 @@ router.put("/:id", async (req, res) => {
 			});
 			return;
 		}
-		await Thought.updateOne({ _id }, { thoughtText }, { new: true });
+		await Thought.updateOne({ _id }, { thoughtText });
 		const findUpdatedRes = await Thought.findById(_id);
 		clog.httpStatus(202);
 		res.status(202).json(findUpdatedRes);
@@ -237,8 +237,67 @@ router.post("/:id/reactions", async (req, res) => {
 			});
 			return;
 		}
-		clog.httpStatus(501);
-		res.sendStatus(501);
+		await findRes.reactions.push({
+			reactionBody,
+			username,
+		});
+		const saveRes = await findRes.save();
+		clog.httpStatus(200);
+		res.status(200).json(saveRes);
+	} catch (err) {
+		clog.error(err.stack);
+		clog.httpStatus(500, err.message);
+		if (!res.headersSent) {
+			res.sendStatus(500);
+		} else {
+			clog.httpStatus(0, "Headers were already sent.");
+		}
+	}
+});
+router.delete("/:id/reactions", async (req, res) => {
+	const clog = new ClogHttp("DELETE /api/thoughts/:id/reactions", true);
+	try {
+		const { id: _id } = req.params;
+		const { reactionId } = req.body;
+		if (!isValidObjectId(_id)) {
+			clog.httpStatus(406, `${_id} is not a valid id`);
+			res.status(406).json({ message: `${_id} is not a valid id` });
+			return;
+		}
+		const findRes = await Thought.findById(_id);
+		if (!findRes) {
+			clog.httpStatus(
+				404,
+				`Thought with ID '${_id}' does not exist or could otherwise not be found!`
+			);
+			res.status(404).json({
+				message: `Thought with ID '${_id}' does not exist or could otherwise not be found!`,
+			});
+			return;
+		}
+		let findReactionRes = {};
+		clog.info(findRes.reactions.length);
+		await findRes.reactions.forEach(async (reaction, index) => {
+			if (String(reaction.reactionId) === String(reactionId)) {
+				findReactionRes["found"] = true;
+				findReactionRes["index"] = index;
+			}
+			clog.info(`Comparing ${reactionId} to ${reaction.reactionId}`);
+		});
+		if (!findReactionRes.found) {
+			clog.httpStatus(
+				404,
+				`Reaction with ID '${reactionId}' does not exist or could otherwise not be found!`
+			);
+			res.status(404).json({
+				message: `Reaction with ID '${reactionId}' does not exist or could otherwise not be found!`,
+			});
+			return;
+		}
+		await findRes.reactions.splice(findReactionRes.index, 1);
+		const saveRes = await findRes.save();
+		clog.httpStatus(202);
+		res.status(202).json(saveRes);
 	} catch (err) {
 		clog.error(err.stack);
 		clog.httpStatus(500, err.message);
