@@ -6,12 +6,15 @@ const router = require("express").Router();
 router.get("/", async (req, res) => {
 	const clog = new ClogHttp("GET /api/thoughts", true);
 	try {
+		// find all thoughts
 		const findRes = await Thought.find();
+		// if the response is empty, return 204
 		if (!findRes) {
-			clog.httpStatus(204, "Find response returned empty!");
+			clog.httpStatus(204, "There are no thoughts in the database");
 			res.status(204);
 			return;
 		}
+		// return 200 and a json containing the data.
 		clog.httpStatus(200);
 		res.status(200).json(findRes);
 	} catch (err) {
@@ -28,18 +31,23 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
 	const clog = new ClogHttp("GET /api/thoughts/:id", true);
 	try {
+		// grab the id from the id parameter
 		const _id = req.params["id"];
+		// check that this id is a valid object id
 		if (!isValidObjectId(_id)) {
 			clog.httpStatus(406, `${_id} is not a valid id`);
 			res.status(406).json({ message: `${_id} is not a valid id` });
 			return;
 		}
+		// find the specified thought
 		const findRes = await Thought.findById(_id);
+		// if it cannot be found, res 404
 		if (!findRes) {
 			clog.httpStatus(404);
 			res.sendStatus(404);
 			return;
 		}
+		// otherwise return 200 and a json containing the data.
 		clog.httpStatus(200);
 		res.status(200).json(findRes);
 	} catch (err) {
@@ -112,6 +120,7 @@ router.post("/", async (req, res) => {
 					"Mongoose is unavailable or otherwise cannot update documents",
 			});
 		}
+		// otherwise res 201 and a json containing all the data
 		clog.httpStatus(201);
 		res.status(201).json(createRes);
 	} catch (err) {
@@ -128,14 +137,19 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
 	const clog = new ClogHttp("PUT /api/thoughts/:id", true);
 	try {
+		// extract the id from the id parameter
 		const _id = req.params["id"];
+		// extract the thoughtText from the body via destruct
 		const { thoughtText } = req.body;
+		// check that this id is a valid object id
 		if (!isValidObjectId(_id)) {
 			clog.httpStatus(406, `${_id} is not a valid id`);
 			res.status(406).json({ message: `${_id} is not a valid id` });
 			return;
 		}
+		// find the specified thought
 		const findThoughtRes = await Thought.findById(_id);
+		// if the thought cannot be found, res 404
 		if (!findThoughtRes) {
 			clog.httpStatus(
 				404,
@@ -146,6 +160,7 @@ router.put("/:id", async (req, res) => {
 			});
 			return;
 		}
+		// if thought text is not supplied, res 406 and explain
 		if (!thoughtText) {
 			clog.httpStatus(406, "Expected thoughtText in request body");
 			res.status(406).json({
@@ -153,8 +168,11 @@ router.put("/:id", async (req, res) => {
 			});
 			return;
 		}
+		// update the nesccesary thought
 		await Thought.updateOne({ _id }, { thoughtText });
+		// get the now updated thought
 		const findUpdatedRes = await Thought.findById(_id);
+		// res 202 and a json containing the data
 		clog.httpStatus(202);
 		res.status(202).json(findUpdatedRes);
 	} catch (err) {
@@ -167,13 +185,17 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
 	const clog = new ClogHttp("DELETE /api/thoughts/:id", true);
 	try {
+		// extract the id from the id parameter
 		const _id = req.params["id"];
+		// check that this id is a valid object id
 		if (!isValidObjectId(_id)) {
 			clog.httpStatus(406, `${_id} is not a valid id`);
 			res.status(406).json({ message: `${_id} is not a valid id` });
 			return;
 		}
+		// find the specified thought
 		const findThoughtRes = await Thought.findById(_id);
+		// if the thought cannot be found, res 404
 		if (!findThoughtRes) {
 			clog.httpStatus(
 				404,
@@ -184,7 +206,9 @@ router.delete("/:id", async (req, res) => {
 			});
 			return;
 		}
+		// delete the specified thought
 		const deleteRes = await Thought.deleteOne({ _id });
+		// if delete isn't acknowledged, res 503 and explain
 		if (!deleteRes.acknowledged) {
 			clog.httpStatus(9503, "Mongoose is unavailable?");
 			res.status(503).json({
@@ -209,13 +233,17 @@ router.delete("/:id", async (req, res) => {
 router.post("/:id/reactions", async (req, res) => {
 	const clog = new ClogHttp("POST /api/thoughts/:id/reactions", true);
 	try {
+		// extract the id from the id parameter
 		const { id: _id } = req.params;
+		// extract the reactionBody and username via destruct from body
 		const { reactionBody, username } = req.body;
+		// check if id is a valid object id
 		if (!isValidObjectId(_id)) {
 			clog.httpStatus(406, `${_id} is not a valid id`);
 			res.status(406).json({ message: `${_id} is not a valid id` });
 			return;
 		}
+		// if reactionBody and username are not provided, res 406 and explain.
 		if (!reactionBody || !username) {
 			clog.httpStatus(
 				406,
@@ -226,6 +254,7 @@ router.post("/:id/reactions", async (req, res) => {
 			});
 			return;
 		}
+		// find the specified thought.
 		const findRes = await Thought.findById(_id);
 		if (!findRes) {
 			clog.httpStatus(
@@ -237,6 +266,7 @@ router.post("/:id/reactions", async (req, res) => {
 			});
 			return;
 		}
+		// and the reaction to the specified thought and save.
 		await findRes.reactions.push({
 			reactionBody,
 			username,
@@ -257,14 +287,19 @@ router.post("/:id/reactions", async (req, res) => {
 router.delete("/:id/reactions", async (req, res) => {
 	const clog = new ClogHttp("DELETE /api/thoughts/:id/reactions", true);
 	try {
+		// extract id from paramas
 		const { id: _id } = req.params;
+		// extract reactionId from body
 		const { reactionId } = req.body;
+		// check if id is a valid object id
 		if (!isValidObjectId(_id)) {
 			clog.httpStatus(406, `${_id} is not a valid id`);
 			res.status(406).json({ message: `${_id} is not a valid id` });
 			return;
 		}
+		// find the specified thought
 		const findRes = await Thought.findById(_id);
+		// if thought not found, res 404
 		if (!findRes) {
 			clog.httpStatus(
 				404,
@@ -276,14 +311,16 @@ router.delete("/:id/reactions", async (req, res) => {
 			return;
 		}
 		let findReactionRes = {};
-		clog.info(findRes.reactions.length);
+		// for each reaction
 		await findRes.reactions.forEach(async (reaction, index) => {
+			// add the index of the reaction if it matches the id we're looking for
 			if (String(reaction.reactionId) === String(reactionId)) {
 				findReactionRes["found"] = true;
 				findReactionRes["index"] = index;
 			}
 			clog.info(`Comparing ${reactionId} to ${reaction.reactionId}`);
 		});
+		// if the specified reaction isn't found, res 404
 		if (!findReactionRes.found) {
 			clog.httpStatus(
 				404,
@@ -294,6 +331,7 @@ router.delete("/:id/reactions", async (req, res) => {
 			});
 			return;
 		}
+		// remove the reaction and save
 		await findRes.reactions.splice(findReactionRes.index, 1);
 		const saveRes = await findRes.save();
 		clog.httpStatus(202);
