@@ -103,6 +103,7 @@ router.post("/", async (req, res) => {
 				message:
 					"Mongoose is unavailable or otherwise cannot create documents",
 			});
+			return;
 		}
 		// add the thought ID to the user's thoughts array
 		findRes.thoughts.push(createRes._id);
@@ -119,6 +120,7 @@ router.post("/", async (req, res) => {
 				message:
 					"Mongoose is unavailable or otherwise cannot update documents",
 			});
+			return;
 		}
 		// otherwise res 201 and a json containing all the data
 		clog.httpStatus(201);
