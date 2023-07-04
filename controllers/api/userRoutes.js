@@ -34,6 +34,7 @@ router.get("/:id", async (req, res) => {
 		if (!findRes) {
 			clog.httpStatus(404);
 			res.sendStatus(404);
+			return;
 		}
 		clog.httpStatus(200);
 		res.status(200).json(findRes);
@@ -84,6 +85,7 @@ router.post("/", async (req, res) => {
 				message:
 					"Mongoose is unavailable or otherwise cannot create documents",
 			});
+			return;
 		}
 		clog.httpStatus(202);
 		res.status(202).json(createRes);
